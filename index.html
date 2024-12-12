@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dhruv is Learning Web3</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div>
+    <h1>This is my dApp!</h1>
+    <p>Here we can set or get the mood:</p>
+    <label for="mood">Input Mood:</label> <br />
+    <input type="text" id="mood" />
+
+    <button onclick="getMood()">Get Mood</button>
+    <button onclick="setMood()">Set Mood</button>
+    <p id="showMood"></p>
+  </div>
+</body>
+<script>
+  var getMood
+  var setMood
+</script>
+<script type="module">
+  import {
+    createWalletClient, 
+    // wallet client used to interface with eth wallet
+    custom,
+    getContract,
+  }from "https://esm.sh/viem";
+  import { sepolia } from "https://esm.sh/viem/chains";
+  import { MoodContractAddress, MoodContractABI } from "./config.js";
+
+  const walletClient = createWalletClient({
+    chain: sepolia,
+    transport: custom(window.ethereum),
+  });
+
+  //this will make your wallet extension show you a pop-up requesting you to connect your wallet
+//accounts will be an array
+const accounts = await walletClient.requestAddresses();
+
+//get the first address in the accounts array
+const [address] = accounts;
+
+
+// Each object inside the array should have the following fields: constant, inputs, name, outputs, payable, stateMutability, and type.
+
+
+const MoodContractInstance = getContract({
+          address: MoodContractAddress,
+          abi: MoodContractABI,
+          client: walletClient,
+        });
+
+        getMood = async function () {
+  try {
+    console.log("Fetching mood...");
+    const mood = await MoodContractInstance.read.getMood();
+    console.log("Mood fetched:", mood);
+    document.getElementById("showMood").innerText = `Your Mood: ${mood}`;
+  } catch (error) {
+    console.error("Error fetching mood:", error);
+  }
+};
+
+setMood = async function () {
+  const mood = document.getElementById("mood").value;
+
+  try {
+    const tx = await MoodContractInstance.write.setMood([mood], { account: address });
+    await tx.wait(); // Wait for confirmation
+    alert("Mood updated successfully!");
+  } catch (error) {
+    console.error("Error setting mood:", error);
+    alert("Failed to set mood.");
+  }
+};
+</script>
+</html>
+
+
+
